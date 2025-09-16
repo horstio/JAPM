@@ -56,26 +56,33 @@ static bool write_files(const char *pbo_name, FILE *f, const list_t *hierarchy, 
 
 static bool write_headers(const char *pbo, const list_t *hierarchy, size_t path_len, FILE *f)
 {
-	char *str;
-	struct stat st;
-	pbo_entry_meta_t meta = { 0 };
-	unsigned char last_header[1 + sizeof(pbo_entry_meta_t)] = { 0 };
+        char *str;
+        char *relative;
+        size_t relative_len;
+        struct stat st;
+        pbo_entry_meta_t meta = { 0 };
+        unsigned char last_header[1 + sizeof(pbo_entry_meta_t)] = { 0 };
 
-	for (const list_t *curr = hierarchy; curr; curr = curr->next) {
-		if (stat(curr->elm, &st) == -1)
-			return FNC_PERROR_RET(bool, false, "Could not stat file %s", curr->elm);
-		meta.data_size = st.st_size;
-		if (!(str = strdup(curr->elm + path_len)))
-			return FNC_PERROR_RET(bool, false, "Could not allocate memory");
+        for (const list_t *curr = hierarchy; curr; curr = curr->next) {
+                if (stat(curr->elm, &st) == -1)
+                        return FNC_PERROR_RET(bool, false, "Could not stat file %s", curr->elm);
+                meta.data_size = st.st_size;
+                if (!(str = strdup(curr->elm + path_len)))
+                        return FNC_PERROR_RET(bool, false, "Could not allocate memory");
 #ifndef _WIN32
-		while (utils_strreplace(str, "/", "\\"));
+                while (utils_strreplace(str, "/", "\\"));
 #endif /* _WIN32 */
-		if (!fwrite(str + 1, strlen(str + 1), 1, f) ||
-			!fwrite(&meta, sizeof(pbo_entry_meta_t), 1, f)) {
-			return FNC_PERROR_RET(bool, false, "Could not write to file %s", pbo);
-		}
-		free(str);
-	}
+                relative = str;
+                while (*relative == '/' || *relative == '\\')
+                        ++relative;
+                relative_len = strlen(relative);
+                if (!fwrite(relative, relative_len + 1, 1, f) ||
+                        !fwrite(&meta, sizeof(pbo_entry_meta_t), 1, f)) {
+                        free(str);
+                        return FNC_PERROR_RET(bool, false, "Could not write to file %s", pbo);
+                }
+                free(str);
+        }
 	if (!fwrite(&last_header[0], 1 + sizeof(pbo_entry_meta_t), 1, f))
 		return FNC_PERROR_RET(bool, false, "Could not write to file %s", pbo);
 	return true;
