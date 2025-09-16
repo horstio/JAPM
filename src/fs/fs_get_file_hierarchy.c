@@ -102,10 +102,10 @@ static bool recursive_retrieve(const char *path, list_t **list)
 /* Note: Only retrieves files */
 bool fs_get_file_hierarchy(const char *path, list_t **list)
 {
-	char *path_cleaned = strdup(path);
+        char *path_cleaned = strdup(path);
 
-	if (!path)
-		return FNC_PERROR_RET(bool, false, "Could not allocated memory");
+        if (!path_cleaned)
+                return FNC_PERROR_RET(bool, false, "Could not allocate memory");
 #ifdef _WIN32
 	fs_path_clean_windows(path_cleaned);
 #else
