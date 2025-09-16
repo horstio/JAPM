@@ -34,10 +34,10 @@ static bool write_files(const char *pbo_name, FILE *f, const list_t *hierarchy, 
 
 	for (; hierarchy; hierarchy = hierarchy->next) {
 		COND_PRINTF(!ARGS->quiet, "Packing %s\n", (char *) hierarchy->elm);
-		if (!(file = fopen(hierarchy->elm, "rb"))) {
-			fclose(file);
-			return FNC_ERROR_RET(bool, false, "Could not read file %s", hierarchy->elm);;
-		}
+                if (!(file = fopen(hierarchy->elm, "rb"))) {
+                        file = NULL;
+                        return FNC_ERROR_RET(bool, false, "Could not read file %s", hierarchy->elm);;
+                }
 		while ((read_len = fread(&buf[0], 1, JAPM_FILE_BUFFER, file))) {
 			SHA1Update(sha1, &buf[0], read_len);
 			if (!fwrite(&buf[0], read_len, 1, f)) {
